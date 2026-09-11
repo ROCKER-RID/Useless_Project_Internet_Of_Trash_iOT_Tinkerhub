@@ -163,7 +163,7 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 *Complete AC power distribution: Master relay cuts/energizes the phase rail for all three TRIAC channels, while the zero-cross detector provides phase-angle synchronization.*
 
 
-*Schematic illustrating optocoupler isolation boundaries separating the 3.3V low-voltage digital domain from the 230V AC high-voltage switching rail.*
+*Full hardware schematic document: Refer to [Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf](https://www.google.com/search?q=Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf) for the complete optoisolated PCB routing, high-voltage creepage separation, snubber networks, and zero-crossing detection stages.*
 
 # Build Photos
 
@@ -188,15 +188,15 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 # Additional Demos
 
 * [Interactive Web Client Preview](https://www.google.com/search?q=https://github.com/your-username/switch-devil)
+* [Complete Hardware Schematics (PDF)](https://github.com/ROCKER-RID/Useless_Project_Internet_Of_Trash_iOT_Tinkerhub/tree/main/Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf)
 * Captive portal provisioning demonstration under `firmware/`
 
 ---
 
 ## Team Contributions
 
-* **Ridhin George:** Designed the cyber-physical architecture, authored the ESP32 phase-angle dimming firmware with microsecond zero-cross timer interrupts, built the Node.js Socket.IO ↔ MQTT gateway, and created the 2D Canvas game physics, hazard logic, and dynamic latency calibrator.
-* **Sharon Maliakal:** Assembled and benchmarked the high-voltage AC Triac power board, integrated snubber circuits for inductive motor loads, and tuned the 2-second fan kickstart break-away torque parameters.
-* **R A Swaroop:** Curated and mastered the Malayalam meme audio soundboard, developed the dialogue HUD and sticker reaction rendering engine, and assisted with electrical isolation safety testing.
+* **Ridhin George:** Architected and built the entire cyber-physical system—engineered the high-voltage AC circuit schematics (`Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf`), authored the ESP32 phase-angle dimming firmware with microsecond zero-cross timer interrupts, developed the Node.js Socket.IO ↔ MQTT gateway server, programmed the core HTML5 Canvas 2D game engine, physics, hazard logic, real-time latency calibration, and the Risk vs. Reward progression system.
+* **Aaron A S:** Optimized the game UI aesthetics, visual styling, CRT filters, fine-tuned the Malayalam meme audio sound effects and timing, and integrated the dialogue reaction stickers.
 
 ---
 
