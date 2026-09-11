@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Switch Devil - SyncSpace IoT Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Manjari:wght@700&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0; padding: 0;
+            overflow: hidden; 
+            background-color: #020205; 
+            color: #0f0;
+            font-family: 'Rajdhani', 'Manjari', sans-serif;
+            width: 100vw; 
+            height: 100vh;
+            height: 100dvh;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* FULL WHITE FLASH OVERLAY */
+        #screen-flash {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            height: 100dvh;
+            background-color: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 0.02s linear;
+        }
+
+        /* LAPTOP & DESKTOP FULL-SCREEN SCALING (4:3 aspect ratio maintained) */
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 200, 0.2), 0 0 100px rgba(0, 0, 0, 1);
+            border-radius: 8px;
+            overflow: hidden;
+            width: min(98vw, calc(96vh * 4 / 3));
+            height: min(96vh, calc(98vw * 3 / 4));
+            aspect-ratio: 4 / 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #020308;
+            flex-shrink: 0;
+        }
+
+        :fullscreen #game-container, :-webkit-full-screen #game-container {
+            width: min(100vw, calc(100vh * 4 / 3));
+            height: min(100vh, calc(100vw * 3 / 4));
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        canvas {
+            display: block; 
+            width: 100%; 
+            height: 100%;
+            background-color: #020308;
+        }
+        
+        /* Cinematic CRT / Vignette Overlay */
+        #crt-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 5, 0.8) 100%),
+                        linear-gradient(rgba(255, 255, 255, 0.03) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 100%, 100% 4px;
+            pointer-events: none; z-index: 10;
+        }
+        
+        /* Top Navigation Buttons */
+        .top-btn {
+            position: absolute; top: 12px;
+            color: #00ffcc; z-index: 25;
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 20px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            cursor: pointer; font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .top-btn:hover {
+            background: rgba(0, 255, 204, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        #fullscreen-btn { left: 15px; }
+        #sync-btn { left: 135px; color: #ffcc00; border-color: rgba(255, 204, 0, 0.3); }
+        #sync-btn:hover { background: rgba(255, 204, 0, 0.2); box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); }
+
+        /* IoT Status HUD */
+        #iot-status {
+            position: absolute; top: 12px; right: 15px;
+            color: #fff; z-index: 20; display: flex; align-items: center; gap: 8px;
+            font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .dot {
+            width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+        }
+        .dot.connected { background-color: #0f0; box-shadow: 0 0 10px #0f0; }
+        .dot.disconnected { background-color: #f00; box-shadow: 0 0 10px #f00; }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column; align-items: center; z-index: 20;
+        }
+        
+        #vex-dialogue {
+            background: rgba(10, 0, 5, 0.9); border: 2px solid #ff2a2a;
+            box-shadow: 0 0 20px rgba(255, 42, 42, 0.5), inset 0 0 15px rgba(255, 0, 0, 0.3);
+            color: #ff4d4d; border-radius: 8px;
+            padding: 12px 20px; margin-top: 15px; font-size: 22px; font-weight: bold;
+            width: 78%; text-align: left; opacity: 0; transition: opacity 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); letter-spacing: 1px;
+            transform: translateY(-20px);
+            min-height: 56px;
+            box-sizing: border-box;
+        }
+        #vex-dialogue.visible { opacity: 1; transform: translateY(0); }
+        
+        #meme-addon-img {
+            width: 50px; height: 50px; object-fit: cover;
+            border-radius: 6px; border: 2px solid #ffcc00;
+            float: left; margin-right: 12px; display: none;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        .screen-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 5, 10, 0.95); backdrop-filter: blur(5px);
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            pointer-events: auto; z-index: 40; text-align: center; padding: 20px;
+        }
+        #start-screen { display: flex; } 
+        
+        h1 { font-size: 3.2em; color: #00ffcc; text-shadow: 0 0 20px #00ffcc, 0 0 40px #0088aa; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 3px;}
+        h2 { font-size: 2.6em; color: #ffcc00; text-shadow: 0 0 20px #ffcc00; margin: 0 0 10px 0; }
+        p { color: #aaccff; font-size: 1.1em; max-width: 650px; line-height: 1.35; margin: 6px 0;}
+        
+        /* HARDWARE SYNC CALIBRATION BOX */
+        .sync-box {
+            background: rgba(0, 20, 30, 0.7);
+            border: 1px solid #00ffcc;
+            border-radius: 8px;
+            padding: 10px 18px;
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: inset 0 0 15px rgba(0, 255, 204, 0.1);
+        }
+        .sync-label {
+            color: #ffcc00; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .sync-slider-row {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .sync-slider {
+            width: 180px; accent-color: #00ffcc; cursor: pointer;
+        }
+        .test-btn {
+            background: rgba(255, 204, 0, 0.2); color: #ffcc00;
+            border: 1px solid #ffcc00; padding: 4px 10px; border-radius: 4px;
+            font-size: 12px; font-weight: bold; cursor: pointer; font-family: inherit;
+            transition: 0.15s;
+        }
+        .test-btn:hover { background: #ffcc00; color: #000; }
+
+        .modal-btn {
+            padding: 12px 34px; font-size: 19px; font-weight: bold; text-transform: uppercase;
+            background: linear-gradient(45deg, #00ffcc, #0088ff); color: #000; 
+            border: none; border-radius: 5px; cursor: pointer;
+            font-family: inherit; margin-top: 15px; 
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+            transition: all 0.2s;
+        }
+        .modal-btn:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.8); 
+            background: linear-gradient(45deg, #ffffff, #00ffcc);
+        }
+
+        /* RISK VS REWARD MODAL BUTTONS */
+        .choice-btn-group {
+            display: flex; gap: 20px; margin-top: 22px; flex-wrap: wrap; justify-content: center;
+        }
+        .claim-btn {
+            padding: 14px 28px; font-size: 17px; font-weight: bold; text-transform: uppercase;
+            background: linear-gradient(45deg, #00ffcc, #00aa88); color: #000;
+            border: none; border-radius: 6px; cursor: pointer; font-family: inherit;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); transition: all 0.2s;
+        }
+        .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 255, 204, 0.8); }
+        .risk-btn {
+            padding: 14px 28px; font-size: 17px; font-weight: bold; text-transform: uppercase;
+            background: linear-gradient(45deg, #ff2a2a, #ff9900); color: #fff;
+            border: none; border-radius: 6px; cursor: pointer; font-family: inherit;
+            box-shadow: 0 0 15px rgba(255, 42, 42, 0.5); transition: all 0.2s;
+        }
+        .risk-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255, 42, 42, 0.8); }
+        
+        select { 
+            padding: 8px 12px; font-size: 15px; margin-top: 10px; font-family: inherit; 
+            background: rgba(0,0,0,0.6); color: #00ffcc; border: 1px solid #00ffcc; 
+            border-radius: 5px; outline: none; cursor: pointer;
+        }
+        option { background: #112; }
+
+        /* IN-GAME QUICK SYNC POPUP */
+        #sync-modal {
+            position: absolute; top: 48px; left: 15px;
+            background: rgba(5, 12, 20, 0.95);
+            border: 1px solid #ffcc00;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+            border-radius: 8px; padding: 12px 16px;
+            display: none; flex-direction: column; gap: 8px;
+            z-index: 60;
+        }
+
+        /* MOBILE CONTROLS */
+        #mobile-controls {
+            display: none; width: 100%;
+            justify-content: space-between; align-items: center;
+            padding: 10px 24px; box-sizing: border-box;
+            z-index: 50; flex-shrink: 0;
+        }
+        .touch-group { display: flex; gap: 15px; align-items: center; }
+        .touch-btn {
+            width: 68px; height: 68px; border-radius: 50%;
+            background: rgba(8, 22, 36, 0.9); border: 2.5px solid #00ffcc;
+            color: #00ffcc; font-size: 26px; font-family: inherit;
+            font-weight: bold; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); cursor: pointer; outline: none;
+        }
+        .touch-btn:active, .touch-btn.active { transform: scale(0.92); background: rgba(0, 255, 204, 0.5); color: #fff; }
+        .jump-btn { width: 76px; height: 76px; border-color: #ffcc00; color: #ffcc00; font-size: 16px; }
+
+        @media (max-width: 900px) and (orientation: portrait) {
+            #game-container {
+                width: min(calc(100vw - 16px), 800px, calc((100dvh - 150px) * 4 / 3));
+                height: auto; max-height: calc(100dvh - 140px); margin: auto 0 8px 0;
+            }
+            #fullscreen-btn, #sync-btn { display: none; }
+            h1 { font-size: 2.3em; } h2 { font-size: 1.8em; } p { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- FULL WHITE FLASH OVERLAY -->
+<div id="screen-flash"></div>
+
+<div id="game-container">
+    <div id="crt-overlay"></div>
+    
+    <!-- Top Bar Controls -->
+    <button id="fullscreen-btn" class="top-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    <button id="sync-btn" class="top-btn" onclick="toggleQuickSyncModal()">⚙ Sync: <span id="nav-delay-val">80</span>ms</button>
+
+    <!-- IN-GAME QUICK SYNC POPUP -->
+    <div id="sync-modal">
+        <div class="sync-label">Calibrate Flash Delay</div>
+        <div class="sync-slider-row">
+            <input type="range" class="sync-slider" min="0" max="500" step="10" value="80" oninput="applyFlashDelay(this.value)">
+            <span style="color:#00ffcc; font-weight:bold; font-size:14px;"><span class="delay-num">80</span>ms</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <button type="button" class="test-btn" onclick="testSyncFlash()">⚡ Test Flash</button>
+            <button type="button" class="test-btn" style="border-color:#aaa; color:#aaa;" onclick="toggleQuickSyncModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="iot-status">
+        <span id="iot-dot" class="dot disconnected"></span>
+        <span id="iot-text">IoT Offline</span>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="ui-layer">
+        <div id="vex-dialogue">
+            <img id="meme-addon-img" src="" alt="Meme">
+            <span id="vex-dialogue-text">Welcome to Illumination Services.</span>
+        </div>
+    </div>
+
+    <div id="start-screen" class="screen-modal">
+        <h1>SWITCH DEVIL<br><span style="font-size:0.4em; color:#fff;">SyncSpace iOT Edition</span></h1>
+         <h1>internet_Of_Trash<br></h1>
+        <p id="control-hint">Controls: <b>W, A, S, D</b> or <b>ARROW KEYS</b> to move/jump.<br>Press <b>F</b> to toggle full screen.<br>Survive the electrical gauntlet to turn on the real-world power.<br><span style="color: #ff0000; font-size: 1.25em; font-weight: bold;">FLASH WARNING</span></p>
+        <!-- HARDWARE SYNC CALIBRATION BOX ON START SCREEN -->
+        <div class="sync-box">
+            <div class="sync-label">Bulb & Screen Flash Sync Delay: <span style="color:#00ffcc;"><span class="delay-num">80</span> ms</span></div>
+            <div class="sync-slider-row">
+                <input type="range" id="main-sync-slider" class="sync-slider" min="0" max="500" step="10" value="80" oninput="applyFlashDelay(this.value)">
+                <button type="button" class="test-btn" onclick="testSyncFlash()">⚡ Test Flash</button>
+            </div>
+            <span style="font-size:11px; color:#88a;">Slide up if screen flashes faster than physical bulb</span>
+        </div>
+
+        <select id="lang-select">
+            <option value="en">English (Corporate Snark)</option>
+            <option value="ml-IN" selected>Malayalam (Local Roast)</option>
+        </select>
+        <button class="modal-btn" onclick="startGame()">Accept Terms & Conditions</button>
+    </div>
+
+    <!-- RISK VS REWARD PROMPT MODAL -->
+    <div id="risk-modal" class="screen-modal">
+        <h2 id="risk-modal-title">LEVEL COMPLETE!</h2>
+        <p id="risk-modal-desc" style="font-size:1.2em; color:#ffcc00; margin:15px 0;">Utility Unlocked: 1st TRIAC LED Bulb.</p>
+        <div class="choice-btn-group">
+            <button type="button" id="btn-claim-utility" class="claim-btn" onclick="claimUtility()">⚡ Claim Utility & Exit</button>
+            <button type="button" id="btn-risk-level" class="risk-btn" onclick="riskAndProceed()">🔥 Risk It & Next Level</button>
+        </div>
+    </div>
+
+    <!-- CASHOUT SUCCESS MODAL -->
+    <div id="claim-screen" class="screen-modal">
+        <h2>UTILITY ACTIVATED</h2>
+        <p id="claim-screen-desc" style="font-size:1.25em; color:#00ffcc;">Hardware outputs secured in real life.</p>
+        <button class="modal-btn" onclick="location.reload()">Play Again</button>
+    </div>
+
+    <div id="win-screen" class="screen-modal">
+        <h2>SYSTEM OVERRIDE SUCCESS</h2>
+        <p>ALL GAUNTLETS CLEARED!<br>Activating 100% Real-World Lights, Fans, and Halogens!</p>
+        <button class="modal-btn" onclick="location.reload()">Restart Demo</button>
+    </div>
+</div>
+
+<!-- Mobile controls -->
+<div id="mobile-controls">
+    <div class="touch-group left-group">
+        <button type="button" id="btn-left" class="touch-btn" aria-label="Left">&#9664;</button>
+        <button type="button" id="btn-right" class="touch-btn" aria-label="Right">&#9654;</button>
+    </div>
+    <div class="touch-group right-group">
+        <button type="button" id="btn-jump" class="touch-btn jump-btn" aria-label="Jump">JUMP</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    // =========================================================================
+    //  MAINS RELAY CONTROLLER (ENERGIZES 230V AC PHASE FOR ALL THREE TRIACS)
+    // =========================================================================
+    function turnOnMainsRelay() {
+        if (socket) {
+            // Emits standard SyncSpace relay commands to turn on Relay 0 (Pin 27)
+            socket.emit('relay_control', { relay: 0, state: 'ON' });
+            socket.emit('relay_control', 'ON');
+            console.log("Mains Relay ON command sent via Socket.IO");
+        }
+    }
+
+    // =========================================================================
+    //  FLASH SYNC DELAY CALIBRATION SYSTEM (Stored in localStorage)
+    // =========================================================================
+    let flashSyncDelay = parseInt(localStorage.getItem('flashSyncDelay') || '80', 10);
+
+    function applyFlashDelay(val) {
+        flashSyncDelay = parseInt(val, 10);
+        localStorage.setItem('flashSyncDelay', flashSyncDelay);
+        
+        document.querySelectorAll('.delay-num').forEach(el => el.innerText = flashSyncDelay);
+        document.getElementById('nav-delay-val').innerText = flashSyncDelay;
+        document.querySelectorAll('.sync-slider').forEach(el => el.value = flashSyncDelay);
+    }
+
+    function toggleQuickSyncModal() {
+        const modal = document.getElementById('sync-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function testSyncFlash() {
+        if (socket) {
+            socket.emit('fan_control', { fan: 2, speed: 'GHOST' });
+            setTimeout(() => { socket.emit('fan_control', { fan: 2, speed: 0 }); }, 200);
+        }
+        setTimeout(() => {
+            screenFlash.style.backgroundColor = '#ffffff';
+            screenFlash.style.opacity = '1';
+            setTimeout(() => { screenFlash.style.opacity = '0'; }, 80);
+        }, flashSyncDelay);
+    }
+
+    applyFlashDelay(flashSyncDelay);
+
+    // --- FULLSCREEN TOGGLE API ---
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn("Fullscreen error:", err);
+            });
+            document.getElementById('fullscreen-btn').innerText = '✕ Exit Fullscreen';
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+            document.getElementById('fullscreen-btn').innerText = '⛶ Fullscreen';
+        }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        const btn = document.getElementById('fullscreen-btn');
+        if (btn) {
+            btn.innerText = document.fullscreenElement ? '✕ Exit Fullscreen' : '⛶ Fullscreen';
+        }
+    });
+
+    // Mobile / Touch Detection
+    function isMobileDevice() {
+        const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent);
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        return isMobileUA || (hasTouch && window.innerWidth <= 1024);
+    }
+
+    function updateControlsVisibility() {
+        const mobileControls = document.getElementById('mobile-controls');
+        if (!mobileControls) return;
+        mobileControls.style.display = (gameActive && isMobileDevice()) ? 'flex' : 'none';
+    }
+
+    window.addEventListener('resize', updateControlsVisibility);
+
+    // --- IoT SYNCSPACE INTEGRATION ---
+    let socket = null;
+    if (typeof io !== 'undefined') {
+        socket = io();
+        socket.on('connect', () => {
+            document.getElementById('iot-dot').className = 'dot connected';
+            document.getElementById('iot-text').innerText = 'IoT Connected';
+            // Trigger Mains Relay ON on page load / reconnect
+            turnOnMainsRelay();
+        });
+        socket.on('disconnect', () => {
+            document.getElementById('iot-dot').className = 'dot disconnected';
+            document.getElementById('iot-text').innerText = 'IoT Offline';
+        });
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const vexDialogue = document.getElementById('vex-dialogue');
+    const vexDialogueText = document.getElementById('vex-dialogue-text');
+    const memeAddonImg = document.getElementById('meme-addon-img');
+    const screenFlash = document.getElementById('screen-flash');
+    
+    let gameActive = false;
+    let currentLang = 'ml-IN';
+    let frameCount = 0;
+    let currentLevel = 1;
+    const maxLevels = 4;
+    
+    let cameraShake = 0;
+    let particles = [];
+    let typewriterInterval;
+    let isDead = false;
+    let failCount = 0;
+    
+    // Level Objects
+    let platforms = [];
+    let fans = [];
+    let teslaGates = [];
+    let bgBulbs = [];
+    let ambientSparks = [];
+    let goalBulb;
+
+    // Audio System
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let currentVexAudio = null;
+
+    // =========================================================================
+    //  2ND TRIAC (FAN 1) CONTROLLER: 100% 2S KICKSTART -> 50% BASELINE (NEVER 0)
+    //  LEVEL 4: DYNAMIC SPEED WITH FAN'S PHYSICAL THRUST (50% TO 100%)
+    // =========================================================================
+    let currentFan1Speed = 0;          // Currently sent speed to Fan 1 (2nd Triac)
+    let fan1KickstartActive = false;   // 100% 2-second initial kickstart flag
+    let fan1KickstartTime = 0;         // Timestamp when kickstart started
+    let fan1EverStarted = false;       // Has the fan kickstarted in Level 3 or 4?
+
+    function updatePhysicalFan1Logic() {
+        if (!socket || !gameActive) return;
+
+        // Fan 1 only runs in Level 3 and Level 4
+        if (currentLevel < 3) {
+            if (currentFan1Speed !== 0) {
+                currentFan1Speed = 0;
+                fan1EverStarted = false;
+                fan1KickstartActive = false;
+                socket.emit('fan_control', { fan: 1, speed: 0 });
+            }
+            return;
+        }
+
+        const now = performance.now();
+
+        // 1. Initial 2-second Kickstart on reaching Level 3 or 4 (100% for 2s)
+        if (!fan1EverStarted) {
+            fan1EverStarted = true;
+            fan1KickstartActive = true;
+            fan1KickstartTime = now;
+        }
+
+        let targetSpeed = 50; // BASELINE IS 50% ALL AROUND LEVEL 3 & 4 (NEVER 0%)
+
+        if (fan1KickstartActive) {
+            if (now - fan1KickstartTime < 2000) {
+                targetSpeed = 100;
+            } else {
+                fan1KickstartActive = false;
+                targetSpeed = 50; // Settles to 50% baseline
+            }
+        } 
+        // 2. Level 4: Thrust-coupled fan control (50% to 100%)
+        else if (currentLevel === 4 && fans.length > 0) {
+            const f4 = fans[0];
+
+            // When the character moves due to the fan's thrust in the game
+            if (f4.isPushingPlayer) {
+                targetSpeed = 100; // Character moves due to fan thrust -> 100%
+            } else {
+                targetSpeed = 50;  // Fan in game stops (sputters) or outside thrust -> 50%
+            }
+        } else {
+            targetSpeed = 50; // Level 3 baseline
+        }
+
+        // Emit over socket ONLY when speed changes
+        if (targetSpeed !== currentFan1Speed) {
+            currentFan1Speed = targetSpeed;
+            socket.emit('fan_control', { fan: 1, speed: targetSpeed });
+        }
+    }
+
+    // =========================================================================
+    //  RISK VS. REWARD UTILITY ROUTING SYSTEM
+    // =========================================================================
+    let pendingLevelPass = 1;
+
+    function promptRiskChoice(levelPassed) {
+        pendingLevelPass = levelPassed;
+        gameActive = false;
+        updateControlsVisibility();
+
+        const modal = document.getElementById('risk-modal');
+        const title = document.getElementById('risk-modal-title');
+        const desc = document.getElementById('risk-modal-desc');
+        const claimBtn = document.getElementById('btn-claim-utility');
+        const riskBtn = document.getElementById('btn-risk-level');
+
+        if (levelPassed === 1) {
+            title.innerText = "SECTOR 1 OVERRIDDEN!";
+            desc.innerHTML = "UNLOCKED: <b>1st TRIAC (LED Bulb) at 100%</b>.<br>Take your utility now, or risk it to play Level 2?";
+            claimBtn.innerText = "⚡ Claim LED Bulb (100%) & Exit";
+            riskBtn.innerText = "🔥 Risk It: Enter Level 2";
+            speakText("Sector one clear. Will you cash out your LED, or risk it?", 'en');
+        } else if (levelPassed === 2) {
+            title.innerText = "SECTOR 2 OVERRIDDEN!";
+            desc.innerHTML = "UNLOCKED: <b>1st TRIAC (LED Bulb 100%) + 3rd TRIAC (Ghostic Halogen 40%)</b>.<br>Cash out both utilities, or risk them to venture into Level 3?";
+            claimBtn.innerText = "⚡ Claim LED (100%) + Halogen (40%)";
+            riskBtn.innerText = "🔥 Risk Both: Enter Level 3";
+            speakText("Sector two clear. Will you risk both utilities for sector three?", 'en');
+        } else if (levelPassed === 3) {
+            title.innerText = "SECTOR 3 OVERRIDDEN!";
+            desc.innerHTML = "UNLOCKED: <b>LED Bulb (100%) + Fan (50%) + Halogen (40%)</b>.<br>Cash out your full setup, or risk everything for Level 4 Final Gauntlet?";
+            claimBtn.innerText = "⚡ Claim All Utilities & Exit";
+            riskBtn.innerText = "🔥 Risk All: Enter Level 4";
+            speakText("Sector three clear. Risk everything for the final gauntlet?", 'en');
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function claimUtility() {
+        document.getElementById('risk-modal').style.display = 'none';
+        const claimScreen = document.getElementById('claim-screen');
+        const desc = document.getElementById('claim-screen-desc');
+
+        if (pendingLevelPass === 1) {
+            // Light up 1st Triac LED to 100%
+            if (socket) {
+                socket.emit('fan_control', { fan: 0, speed: 100 });
+                socket.emit('fan_control', { fan: 1, speed: 0 });
+                socket.emit('fan_control', { fan: 2, speed: 0 });
+            }
+            desc.innerHTML = "<b>1st TRIAC LED Bulb is GLOWING at 100%!</b><br>You took the utility and survived.";
+        } else if (pendingLevelPass === 2) {
+            // 1st Triac LED 100% + 3rd Triac Ghostic Halogen 40%
+            if (socket) {
+                socket.emit('fan_control', { fan: 0, speed: 100 });
+                socket.emit('fan_control', { fan: 1, speed: 0 });
+                socket.emit('fan_control', { fan: 2, speed: 40 });
+            }
+            desc.innerHTML = "<b>1st TRIAC LED (100%) + 3rd TRIAC Halogen (40% Glow) ACTIVATED!</b><br>Enjoy your real-world ambient setup.";
+        } else if (pendingLevelPass === 3) {
+            // LED 100% + Fan 50% + Halogen 40%
+            if (socket) {
+                socket.emit('fan_control', { fan: 0, speed: 100 });
+                socket.emit('fan_control', { fan: 1, speed: 50 });
+                socket.emit('fan_control', { fan: 2, speed: 40 });
+            }
+            desc.innerHTML = "<b>FULL UTILITY PACK ACTIVATED!</b><br>LED Bulb (100%) | Induction Fan (50%) | Halogen (40%).";
+        }
+
+        claimScreen.style.display = 'flex';
+    }
+
+    function riskAndProceed() {
+        document.getElementById('risk-modal').style.display = 'none';
+        
+        // Risky choice: Turn OFF 1st Triac LED
+        if (socket) {
+            socket.emit('fan_control', { fan: 0, speed: 0 });
+            socket.emit('fan_control', { fan: 2, speed: 0 }); // Halogen ready for flickers
+        }
+
+        currentLevel = pendingLevelPass + 1;
+        loadLevel();
+        gameActive = true;
+        updateControlsVisibility();
+    }
+
+    // =========================================================================
+    //  HARDWARE-SYNCED FLICKER ENGINE (Triggers Triac 3 GHOST Mode on ESP32)
+    // =========================================================================
+    let isHardwareFlickering = false;
+    let screenFlickerAllowed = false;
+    let delayTimeoutHandle = null;
+    let lastFlickerUpdate = 0;
+
+    function startHardwareFlicker() {
+        if (!isHardwareFlickering) {
+            isHardwareFlickering = true;
+            
+            if (socket) {
+                socket.emit('fan_control', { fan: 2, speed: 'GHOST' });
+            }
+
+            clearTimeout(delayTimeoutHandle);
+            if (flashSyncDelay > 0) {
+                screenFlickerAllowed = false;
+                delayTimeoutHandle = setTimeout(() => {
+                    screenFlickerAllowed = true;
+                }, flashSyncDelay);
+            } else {
+                screenFlickerAllowed = true;
+            }
+        }
+    }
+
+    function stopHardwareFlicker() {
+        if (isHardwareFlickering) {
+            isHardwareFlickering = false;
+            screenFlickerAllowed = false;
+            clearTimeout(delayTimeoutHandle);
+            screenFlash.style.opacity = '0';
+            
+            if (socket) {
+                socket.emit('fan_control', { fan: 2, speed: 0 });
+            }
+        }
+    }
+
+    function updateHardwareFlickerLoop() {
+        const now = performance.now();
+        if (now - lastFlickerUpdate > 50) {
+            lastFlickerUpdate = now;
+
+            if (isHardwareFlickering && screenFlickerAllowed) {
+                if (Math.random() > 0.75) {
+                    screenFlash.style.backgroundColor = '#ffffff';
+                    screenFlash.style.opacity = '1';
+                    cameraShake = Math.max(cameraShake, 8);
+                } else {
+                    screenFlash.style.opacity = '0';
+                }
+            } else {
+                screenFlash.style.opacity = '0';
+            }
+        }
+    }
+
+    // =========================================================================
+    //  MATCHED AUDIO & IMAGE DATABASE
+    // =========================================================================
+    const malayalamMemes = [
+        { quote: "അധികമൊന്നുമില്ല, രണ്ടുമൂന്ന് പിരി എവിടെയോ അലഞ്ഞു കിടക്കുന്നു.", audio: "./audio/adhukam onnum illa 2 3 piri.mpeg", image: "./stickers/pappu.jpg" },
+        { quote: "അയ്യയ്യയ്യേ...", audio: "./audio/ayy ayy ayye.mpeg", image: "./stickers/Jagathy Sreekumar.jpg" },
+        { quote: "അയ്യേ അയ്യേ... അയ്യയ്യയ്യേ...", audio: "./audio/ayye.mpeg", image: "./stickers/mohalal.jpg" },
+        { quote: "എനിവേ ഞാൻ പോകുന്നു, ബൈ ദ ബൈ!", audio: "./audio/bye the bye.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "ഞാൻ ചിരിക്കണോ കരയണോ?", audio: "./audio/chirrikano carayano.mpeg", image: "./stickers/salimkumar.jpg" },
+        { quote: "ഡാ ഡാ ഡാ ഡാ... മതിയടാ!!", audio: "./audio/da da mathiyade.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "ധൈര്യമുണ്ടെങ്കിൽ ഇറങ്ങി വാടാ!", audio: "./audio/dhairyam undel erangi vada.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "എന്തിനാ ഇപ്പൊ ഇങ്ങോട്ട് കേറി വന്നത്?", audio: "./audio/enthinaippo ingottu keri vannath.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "എന്തോ? എങ്ങനെ?", audio: "./audio/entho enganay.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "എന്ത് പറ്റി രമണാ?", audio: "./audio/enthupetti ramana.mpeg", image: "./stickers/dileep.jpg" },
+        { quote: "എടാ ദാസാ, ഏതാ ഈ അലവലാതി?", audio: "./audio/etha ee alavaladhi.mpeg", image: "./stickers/sreenivasan.jpg" },
+        { quote: "ഇപ്പൊ എന്താ ഉണ്ടായേ?", audio: "./audio/ippo enthaa indaye.mpeg", image: "./stickers/innocent.jpg" },
+        { quote: "ഇത് എന്നാത്ത സാധനം?", audio: "./audio/ith ennatha chadahom.mpeg", image: "./stickers/salimkumar.jpg" },
+        { quote: "ഇത്രയും വലിയ ഗതികെട്ടവൻ ഈ ലോകത്ത് വേറെ ആരെങ്കിലും ഉണ്ടാവുമോ എന്റെ കർത്താവേ?", audio: "./audio/ithrem velya gethikettavan.mpeg", image: "./stickers/jayasurya.jpg" },
+        { quote: "ഇവൻ ഇവിടെയൊന്നും ജനിക്കേണ്ടവനേ അല്ല... ജനിക്കേണ്ടവനേ അല്ല!", audio: "./audio/ivan ividey onnum jenikkendavane alla.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "ഇവിടെ ആണുങ്ങൾ ആരുമില്ലേ?", audio: "./audio/ivide anungal arum ille.mpeg", image: "./stickers/innocent.jpg" },
+        { quote: "മാപ്പൊന്നും പറയണ്ട, പൊക്കോ.", audio: "./audio/mapponnum parayanda pokko.mpeg", image: "./stickers/suraj venjaramood.jpg" },
+        { quote: "നമ്മൾ അനാഥരാണ്, പക്ഷേ ഗുണ്ടകളല്ല.", audio: "./audio/nammal anadhar ane.mpeg", image: "./stickers/aaro_enna_kollan.jpg" },
+        { quote: "നീ പൊന്നപ്പനല്ലടാ, തങ്കപ്പൻ!", audio: "./audio/nee ponnapan allada.mpeg", image: "./stickers/janardhanan.jpg" },
+        { quote: "നഹീ എന്ന് പറഞ്ഞാൽ നഹീ, പോടോ!", audio: "./audio/nehi ne paranjal nehi.mpeg", image: "./stickers/harisree ashokan.jpg" },
+        { quote: "നിന്നെ ഇതിനൊന്നും കൊള്ളുകയില്ലെന്ന് നീ വീണ്ടും വീണ്ടും തെളിയിച്ചിരിക്കുകയാണ് എന്റെ വിജയാ...", audio: "./audio/ninne ithine onnum kollila.mpeg", image: "./stickers/mohalal.jpg" },
+        { quote: "ഓ ഭയങ്കരം, ഭയങ്കരം!", audio: "./audio/oo bayabgaram thanne.mpeg", image: "./stickers/maniyanpilla raju.jpg" },
+        { quote: "ഒരു കയ്യബദ്ധം, നാറ്റിക്കരുത്.", audio: "./audio/oro kayy abadham.mpeg", image: "./stickers/salimkumar.jpg" },
+        { quote: "പോയ് പണി നോക്കടാ അവിടുന്ന്!", audio: "./audio/poi pani nokkada.mpeg", image: "./stickers/mammukoya.jpg" },
+        { quote: "ഇവൻ പുലിയാണ് കേട്ടാ... പുലി എന്ന് പറഞ്ഞാൽ വെറും പുലിയല്ല, ഒരു സിംഹം!", audio: "./audio/puli.mpeg", image: "./stickers/mamooti.jpg" },
+        { quote: "വർത്താനം പറയാൻ ഇവിടെ ആണുങ്ങളുണ്ട്, ചലക്കരുത് നീ!", audio: "./audio/varthanam parayan ivide anungal inde.mpeg", image: "./stickers/mammukoya.jpg" },
+        { quote: "God! You again! വീണ്ടും നിങ്ങളോ?!", audio: "./audio/you again.mpeg", image: "./stickers/dileep.jpg" }
+    ];
+
+    const englishTaunts = [
+        "That platform was 100% structurally sound. Yesterday.",
+        "Denied. Please enjoy this complimentary sensory experience.",
+        "Are your hands shaking? Or are you just bad?",
+        "Error 404: Player skill not found.",
+        "I could automate your failure, but watching is too fun.",
+        "You think you're a pro? Denied.",
+        "Please submit a ticket if you feel this death was unfair. We won't read it."
+    ];
+
+    function initAudioEnv() {}
+
+    function speakText(text, languageCode) {
+        if (currentVexAudio) currentVexAudio.pause();
+        const lang = languageCode === 'ml-IN' ? 'ml' : 'en';
+        const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=${lang}&q=${encodeURIComponent(text)}`;
+        currentVexAudio = new Audio(url);
+        currentVexAudio.playbackRate = 0.85 + Math.random() * 0.15; 
+        currentVexAudio.play().catch(e => { playBlabber(text); });
+    }
+
+    function playBlabber(text) {
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i >= text.length) return clearInterval(interval);
+            if (text[i] !== ' ') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120 + Math.random() * 80, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            }
+            i++;
+        }, 40);
+    }
+
+    function playPunishmentSound() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80 + Math.random() * 60, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300 + Math.random() * 200, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function showTypewriterText(text, imageSrc = null) {
+        clearInterval(typewriterInterval);
+        
+        if (imageSrc) {
+            memeAddonImg.src = imageSrc;
+            memeAddonImg.style.display = 'block';
+            memeAddonImg.onerror = () => { memeAddonImg.style.display = 'none'; };
+        } else {
+            memeAddonImg.style.display = 'none';
+        }
+
+        vexDialogueText.innerText = "";
+        vexDialogue.classList.add('visible');
+        
+        let i = 0;
+        typewriterInterval = setInterval(() => {
+            vexDialogueText.innerText += text.charAt(i);
+            i++;
+            if (i >= text.length) clearInterval(typewriterInterval);
+        }, 35); 
+
+        setTimeout(() => { vexDialogue.classList.remove('visible'); }, 4000);
+    }
+
+    class BackgroundBulb {
+        constructor(x, y, radius) {
+            this.x = x; this.y = y; this.radius = radius;
+            this.baseBrightness = 20 + Math.random() * 30;
+            this.phase = Math.random() * Math.PI * 2;
+            this.flicker = 0;
+        }
+        draw(ctx) {
+            let bright = this.baseBrightness + Math.sin(frameCount * 0.02 + this.phase) * 10;
+            if (Math.random() < 0.01) this.flicker = 50; 
+            if (this.flicker > 0) { bright += this.flicker; this.flicker *= 0.8; }
+            
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            let grad = ctx.createRadialGradient(0,0,0, 0,0, this.radius * 3);
+            grad.addColorStop(0, `rgba(255, 255, 200, ${bright/200})`);
+            grad.addColorStop(1, 'rgba(255, 255, 200, 0)');
+            ctx.fillStyle = grad;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.beginPath(); ctx.arc(0,0, this.radius*3, 0, Math.PI*2); ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            ctx.fillStyle = '#222';
+            ctx.fillRect(-this.radius/2, this.radius-2, this.radius, this.radius);
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + bright/400})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, 0.3)`;
+            ctx.beginPath(); ctx.arc(0,0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            
+            ctx.strokeStyle = `rgba(255, 255, 200, ${0.3 + bright/100})`;
+            ctx.beginPath(); ctx.moveTo(-this.radius/3, this.radius/2);
+            ctx.lineTo(0, -this.radius/2); ctx.lineTo(this.radius/3, this.radius/2);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    class InductionFan {
+        constructor(x, y, width, height, direction, power) {
+            this.x = x; this.y = y; this.width = width; this.height = height;
+            this.dir = direction; 
+            this.power = power;
+            this.bladeAngle = 0;
+            this.active = true;
+            this.sputterTimer = 100;
+            this.isPushingPlayer = false; // Tracks if fan's thrust is currently moving the character
+        }
+        update() {
+            this.sputterTimer--;
+            if(this.sputterTimer <= 0) {
+                this.active = !this.active;
+                this.sputterTimer = this.active ? 60 + Math.random() * 100 : 20 + Math.random() * 40;
+                if(!this.active && Math.random() > 0.3) {
+                    spawnParticles(this.x + this.width/2, this.y + this.height/2, '#0ff', 15, true); 
+                }
+            }
+            
+            this.isPushingPlayer = false; // Reset each frame
+            if (this.active) {
+                this.bladeAngle += 0.4;
+                if (!isDead && player.y + player.height > this.y && player.y < this.y + this.height) {
+                    if ((this.dir === 1 && player.x > this.x) || (this.dir === -1 && player.x < this.x)) {
+                        let dist = Math.abs(player.x - this.x);
+                        if (dist < 300) { 
+                            player.x += this.power * this.dir * (1 - dist/300);
+                            this.isPushingPlayer = true; // Actively applying thrust to player!
+                        }
+                    }
+                }
+                if (Math.random() < 0.3) {
+                    particles.push({
+                        x: this.x + (this.dir===1 ? this.width : 0), 
+                        y: this.y + Math.random() * this.height,
+                        dx: this.dir * (5 + Math.random()*5), dy: (Math.random()-0.5)*1,
+                        life: 1.0, color: '#0ff', isSpark: false, isWind: true
+                    });
+                }
+            } else {
+                this.bladeAngle += 0.05; 
+            }
+        }
+        draw(ctx) {
+            ctx.save();
+            ctx.translate(this.x + this.width/2, this.y + this.height/2);
+            
+            ctx.fillStyle = '#112';
+            ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+            ctx.strokeStyle = '#334'; ctx.lineWidth = 4;
+            ctx.strokeRect(-this.width/2, -this.height/2, this.width, this.height);
+            
+            ctx.rotate(this.bladeAngle);
+            ctx.fillStyle = '#445';
+            for(let i=0; i<4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(0,0); ctx.lineTo(10, -this.height/2 + 5);
+                ctx.lineTo(-10, -this.height/2 + 5); ctx.fill();
+            }
+            
+            ctx.rotate(-this.bladeAngle);
+            ctx.fillStyle = '#223';
+            ctx.beginPath(); ctx.arc(0,0, 8, 0, Math.PI*2); ctx.fill();
+            if(!this.active && Math.random() < 0.2) {
+                ctx.fillStyle = '#0ff'; ctx.beginPath(); ctx.arc(0,0, 4, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    const player = {
+        x: 50, y: 500, width: 20, height: 32,
+        dx: 0, dy: 0, speed: 5, jumpPower: -12,
+        grounded: false, walkTime: 0, scaleX: 1, scaleY: 1
+    };
+
+    function drawPlayer(ctx) {
+        ctx.save();
+        ctx.translate(player.x + player.width/2, player.y + player.height);
+        ctx.scale(player.scaleX, player.scaleY);
+
+        let t = player.walkTime;
+        let speedFactor = Math.abs(player.dx) > 0.1 ? 1 : 0;
+        
+        ctx.strokeStyle = '#889'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        for(let i=0; i<2; i++) {
+            let offset = i === 0 ? 0 : Math.PI;
+            let legX = 0, legY = 0, kneeX = 0, kneeY = 0;
+            
+            if (player.grounded) {
+                if (speedFactor > 0) {
+                    legX = Math.sin(t + offset) * 12;
+                    legY = Math.max(0, Math.cos(t + offset) * 8);
+                    kneeX = legX/2 + (player.dx > 0 ? -5 : 5);
+                    kneeY = legY/2 - 5;
+                } else {
+                    legX = i === 0 ? -6 : 6; legY = 0; kneeX = legX; kneeY = -5;
+                }
+            } else {
+                legX = i === 0 ? -8 : 8;
+                legY = player.dy < 0 ? 5 : 12; 
+                kneeX = legX; kneeY = legY/2 - (player.dy < 0 ? 5 : 0);
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(i === 0 ? -4 : 4, -10); 
+            ctx.lineTo(kneeX, -10 + kneeY);    
+            ctx.lineTo(legX, legY);            
+            ctx.stroke();
+        }
+
+        ctx.translate(0, -20);
+        
+        ctx.globalCompositeOperation = 'lighter';
+        let grad = ctx.createRadialGradient(0,0,0, 0,0, 40);
+        grad.addColorStop(0, `rgba(0, 255, 255, 0.4)`);
+        grad.addColorStop(1, 'rgba(0, 255, 255, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0,0, 40, 0, Math.PI*2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+
+        ctx.fillStyle = '#334'; ctx.fillRect(-8, 8, 16, 8);
+        ctx.fillStyle = '#112'; ctx.fillRect(-6, 16, 12, 4);
+
+        ctx.fillStyle = 'rgba(200, 255, 255, 0.2)';
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, -4, 14, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        
+        ctx.strokeStyle = '#0ff';
+        ctx.beginPath(); ctx.moveTo(-4, 6); ctx.lineTo(-6, -4); ctx.lineTo(0, -10); ctx.lineTo(6, -4); ctx.lineTo(4, 6);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff';
+        let eyeDir = player.dx > 0.1 ? 2 : (player.dx < -0.1 ? -2 : 0);
+        ctx.fillRect(-6 + eyeDir, -6, 4, 3);
+        ctx.fillRect(2 + eyeDir, -6, 4, 3);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(-5 + eyeDir, -6, 2, 2);
+        ctx.fillRect(3 + eyeDir, -6, 2, 2);
+        
+        ctx.beginPath(); 
+        ctx.moveTo(-7 + eyeDir, -8); ctx.lineTo(-3 + eyeDir, -6);
+        ctx.moveTo(7 + eyeDir, -8); ctx.lineTo(3 + eyeDir, -6);
+        ctx.strokeStyle = '#fff'; ctx.stroke();
+
+        ctx.restore();
+    }
+
+    function loadLevel() {
+        player.x = 50; player.y = 500;
+        player.dx = 0; player.dy = 0;
+        player.scaleX = 1; player.scaleY = 1;
+        isDead = false;
+        stopHardwareFlicker();
+
+        // LEVEL 3 & 4: Keep running at 50% baseline (never drop to 0% whatever happens)
+        if (currentLevel >= 3) {
+            if (currentFan1Speed !== 50 && !fan1KickstartActive) {
+                currentFan1Speed = 50;
+                if (socket) socket.emit('fan_control', { fan: 1, speed: 50 });
+            }
+        } else {
+            if (socket && currentFan1Speed !== 0) {
+                socket.emit('fan_control', { fan: 1, speed: 0 });
+                currentFan1Speed = 0;
+            }
+        }
+        
+        platforms = []; fans = []; teslaGates = []; ambientSparks = [];
+        
+        if (bgBulbs.length === 0) {
+            for(let i=0; i<8; i++) {
+                bgBulbs.push(new BackgroundBulb(Math.random()*canvas.width, Math.random()*canvas.height, 5+Math.random()*5));
+            }
+        }
+
+        if (currentLevel === 1) {
+            goalBulb = {x: 700, y: 100, width: 40, height: 60};
+            platforms = [
+                { x: 0, y: 550, width: 200, height: 40, fake: false },
+                { x: 250, y: 450, width: 100, height: 30, fake: false },
+                { x: 400, y: 350, width: 100, height: 30, fake: true, breakTimer: 0 },
+                { x: 550, y: 250, width: 100, height: 30, fake: false },
+                { x: 650, y: 160, width: 150, height: 30, fake: false }
+            ];
+        } else if (currentLevel === 2) {
+            goalBulb = {x: 720, y: 150, width: 40, height: 60};
+            platforms = [
+                { x: 0, y: 550, width: 150, height: 40, fake: false },
+                { x: 220, y: 450, width: 100, height: 30, fake: false },
+                { x: 400, y: 350, width: 100, height: 30, fake: true, breakTimer: 0 },
+                { x: 580, y: 250, width: 180, height: 30, fake: false }
+            ];
+            fans.push(new InductionFan(700, 380, 40, 60, -1, 2.0));
+        } else if (currentLevel === 3) {
+            goalBulb = {x: 720, y: 100, width: 40, height: 60};
+            platforms = [
+                { x: 0, y: 550, width: 120, height: 40, fake: false },
+                { x: 150, y: 450, width: 80, height: 30, fake: false, moveType: 'h', startX: 150, range: 80, speed: 1.5, offset: 0 },
+                { x: 380, y: 350, width: 80, height: 30, fake: false },
+                { x: 550, y: 250, width: 80, height: 30, fake: false, moveType: 'v', startY: 250, range: 60, speed: 2, offset: Math.PI },
+                { x: 650, y: 160, width: 120, height: 30, fake: false }
+            ];
+            teslaGates.push({x: 320, gapY: 280, gapHeight: 120, width: 20});
+        } else if (currentLevel === 4) {
+            goalBulb = {x: 720, y: 120, width: 40, height: 60};
+            platforms = [
+                { x: 0, y: 550, width: 100, height: 40, fake: false },
+                { x: 150, y: 450, width: 80, height: 30, fake: true, breakTimer: 0 },
+                { x: 300, y: 380, width: 80, height: 30, fake: false },
+                { x: 450, y: 300, width: 80, height: 30, fake: false, moveType: 'h', startX: 450, range: 60, speed: 2.5, offset: 0 },
+                // Lowered from y:180 to y:215 to clear comfortably under the Tesla gate block bar (gapY: 150 to 260)
+                { x: 650, y: 215, width: 100, height: 30, fake: false, moveType: 'h', startX: 600, range: 100, speed: 1.2, offset: 0 } 
+            ];
+            fans.push(new InductionFan(300, 280, 40, 60, 1, 1.5));
+            teslaGates.push({x: 580, gapY: 150, gapHeight: 110, width: 20});
+        }
+    }
+
+    function spawnParticles(x, y, color, amount, isSpark = false) {
+        for(let i=0; i<amount; i++) {
+            particles.push({
+                x: x, y: y, dx: (Math.random() - 0.5) * (isSpark ? 12 : 5), dy: (Math.random() - 0.5) * (isSpark ? 12 : 5) - (isSpark ? 2 : 0),
+                life: 1.0, color: color, isSpark: isSpark, isWind: false
+            });
+        }
+    }
+
+    function drawLightning(ctx, x1, y1, x2, y2, segments, color) {
+        ctx.beginPath(); ctx.moveTo(x1, y1);
+        let curX = x1, curY = y1;
+        for(let i=1; i<=segments; i++) {
+            let targetX = x1 + (x2-x1)*(i/segments);
+            let targetY = y1 + (y2-y1)*(i/segments);
+            curX = targetX + (Math.random()-0.5)*20;
+            curY = targetY + (Math.random()-0.5)*20;
+            if(i===segments) { curX = x2; curY = y2; }
+            ctx.lineTo(curX, curY);
+        }
+        ctx.strokeStyle = color; ctx.lineWidth = Math.random() * 3 + 1;
+        ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function triggerDeath() {
+        if(isDead) return;
+        isDead = true; failCount++;
+        cameraShake = 22;
+        
+        spawnParticles(player.x + player.width/2, player.y + player.height/2, '#f00', 40, true);
+        playPunishmentSound();
+        
+        // Death flash synchronized with user delay
+        setTimeout(() => {
+            screenFlash.style.backgroundColor = '#ffffff';
+            screenFlash.style.opacity = '1';
+            setTimeout(() => { screenFlash.style.opacity = '0'; }, 100);
+        }, flashSyncDelay);
+
+        startHardwareFlicker();
+
+        // LEVEL 3 & 4: NEVER DROP TO 0% ON LOSING FROM PLATFORM! STAYS AT 50%
+        if (currentLevel >= 3) {
+            if (currentFan1Speed !== 50) {
+                currentFan1Speed = 50;
+                if (socket) socket.emit('fan_control', { fan: 1, speed: 50 });
+            }
+        } else {
+            if (socket && currentFan1Speed !== 0) {
+                socket.emit('fan_control', { fan: 1, speed: 0 });
+                currentFan1Speed = 0;
+            }
+        }
+
+        // --- MATCHED AUDIO & IMAGE PLAYBACK ---
+        if (currentLang === 'ml-IN') {
+            const meme = malayalamMemes[Math.floor(Math.random() * malayalamMemes.length)];
+            showTypewriterText(meme.quote, meme.image);
+            
+            if (currentVexAudio) currentVexAudio.pause();
+            currentVexAudio = new Audio(meme.audio);
+            currentVexAudio.play().catch(e => {
+                speakText(meme.quote, 'ml-IN');
+            });
+        } else {
+            const insult = englishTaunts[Math.floor(Math.random() * englishTaunts.length)];
+            showTypewriterText(insult, null);
+            speakText(insult, 'en');
+        }
+
+        // =========================================================================
+        //  IoT HARDWARE CONTROL LOGIC (DEATH)
+        // =========================================================================
+        if (socket) {
+            // Trigger 3rd TRIAC (Halogen) flicker
+            socket.emit('fan_control', { fan: 2, speed: 'GHOST' });
+            setTimeout(() => { socket.emit('fan_control', { fan: 2, speed: 0 }); }, 1500);
+        }
+
+        setTimeout(loadLevel, 1400);
+    }
+
+    // --- CONTROLS SYSTEM ---
+    const keys = { right: false, left: false, up: false };
+
+    function jumpPlayer() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (player.grounded && !isDead && gameActive) {
+            player.dy = player.jumpPower; 
+            player.grounded = false;
+            player.scaleX = 0.6; 
+            player.scaleY = 1.4;
+            spawnParticles(player.x + 10, player.y + 32, '#888', 10, false);
+        }
+    }
+
+    // Keyboard Listeners (PC / Laptop)
+    window.addEventListener('keydown', e => {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+        if ((e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space')) {
+            jumpPlayer();
+        }
+        if (e.code === 'KeyF') {
+            toggleFullscreen();
+        }
+        if (e.code === 'KeyS') {
+            toggleQuickSyncModal();
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    });
+
+    // Mobile Touch Controls
+    function attachButtonControls(btn, onDown, onUp) {
+        const handleStart = (e) => {
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            btn.classList.add('active');
+            onDown();
+        };
+
+        const handleEnd = (e) => {
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+            btn.classList.remove('active');
+            if (onUp) onUp();
+        };
+
+        btn.addEventListener('touchstart', handleStart, { passive: false });
+        btn.addEventListener('touchend', handleEnd, { passive: false });
+        btn.addEventListener('touchcancel', handleEnd, { passive: false });
+        btn.addEventListener('mousedown', handleStart);
+        btn.addEventListener('mouseup', handleEnd);
+        btn.addEventListener('mouseleave', handleEnd);
+    }
+
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
+
+    attachButtonControls(btnLeft, () => { keys.left = true; }, () => { keys.left = false; });
+    attachButtonControls(btnRight, () => { keys.right = true; }, () => { keys.right = false; });
+    attachButtonControls(btnJump, () => { jumpPlayer(); }, null);
+
+    function update() {
+        if (!gameActive) return;
+        frameCount++;
+        
+        updateHardwareFlickerLoop();
+
+        player.scaleX += (1 - player.scaleX) * 0.15;
+        player.scaleY += (1 - player.scaleY) * 0.15;
+        fans.forEach(f => f.update());
+
+        // Update real-world Triac 2 based on fan thrust
+        updatePhysicalFan1Logic();
+
+        if(!isDead) {
+            player.dy += 0.5;
+            player.y += player.dy;
+            
+            // Mid-air fall triggers GHOST flicker on Triac 3
+            if (!player.grounded && player.dy > 3.0) {
+                startHardwareFlicker();
+            } else if (player.grounded) {
+                stopHardwareFlicker();
+            }
+
+            if (keys.right) { player.dx += 2; player.walkTime += 0.3; }
+            else if (keys.left) { player.dx -= 2; player.walkTime += 0.3; }
+            else { player.walkTime = 0; }
+            
+            player.dx *= 0.8;
+            player.x += player.dx;
+
+            if(player.x < 0) player.x = 0;
+            if(player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+
+            let wasGrounded = player.grounded;
+            player.grounded = false;
+
+            for (let i = 0; i < platforms.length; i++) {
+                let p = platforms[i];
+                if(p.moveType === 'h') p.x = p.startX + Math.sin(frameCount * 0.05 * p.speed + p.offset) * p.range;
+                if(p.moveType === 'v') p.y = p.startY + Math.sin(frameCount * 0.05 * p.speed + p.offset) * p.range;
+
+                if (p.fake && p.breakTimer > 0) {
+                    p.breakTimer--;
+                    if (p.breakTimer <= 0) {
+                        spawnParticles(p.x + p.width/2, p.y, '#f00', 20, true);
+                        platforms.splice(i, 1); continue;
+                    }
+                }
+
+                if (player.dy >= 0 && player.x + player.width > p.x && player.x < p.x + p.width &&
+                    player.y + player.height > p.y && player.y + player.height - player.dy <= p.y + 12) {
+                    
+                    if (p.fake && p.breakTimer === 0) {
+                        p.breakTimer = 40; 
+                        cameraShake = 5;
+                    } else {
+                        player.grounded = true; player.dy = 0; player.y = p.y - player.height;
+                        stopHardwareFlicker(); 
+
+                        if(p.moveType === 'h') player.x += (p.x - (p.startX + Math.sin((frameCount-1) * 0.05 * p.speed + p.offset) * p.range));
+                        if(!wasGrounded) {
+                            player.scaleX = 1.4; player.scaleY = 0.6; 
+                            spawnParticles(player.x + 10, player.y + 32, '#888', 8, false);
+                        }
+                    }
+                }
+            }
+
+            if(currentLevel >= 2 && Math.random() < 0.02) {
+                ambientSparks.push({x: Math.random() * canvas.width, y: -20, dy: 6 + Math.random()*4, width: 4, height: 20});
+            }
+            for(let i = ambientSparks.length - 1; i >= 0; i--) {
+                let s = ambientSparks[i]; s.y += s.dy;
+                if(player.x < s.x + s.width && player.x + player.width > s.x && player.y < s.y + s.height && player.y + player.height > s.y) triggerDeath();
+                if(s.y > canvas.height) ambientSparks.splice(i, 1);
+            }
+
+            teslaGates.forEach(g => {
+                if(player.x + player.width > g.x && player.x < g.x + g.width) {
+                    if(player.y < g.gapY || player.y + player.height > g.gapY + g.gapHeight) triggerDeath();
+                }
+            });
+
+            // REACHING GOAL BULB / SECTOR OVERRIDE
+            if (player.x < goalBulb.x + goalBulb.width && player.x + player.width > goalBulb.x &&
+                player.y < goalBulb.y + goalBulb.height && player.y + player.height > goalBulb.y) {
+                
+                stopHardwareFlicker();
+
+                if (currentLevel < maxLevels) {
+                    // Risk vs Reward Choice on Level 1, 2, and 3
+                    promptRiskChoice(currentLevel);
+                } else {
+                    // Level 4 Final Override Victory!
+                    gameActive = false;
+                    updateControlsVisibility();
+                    showTypewriterText("System Override Complete. All power restored.", null);
+                    speakText("System Override Complete. All power restored.", 'en');
+                    setTimeout(() => { 
+                        document.getElementById('win-screen').style.display = 'flex'; 
+                    }, 2000);
+                    
+                    // VICTORY: Fire all physical hardware to 100%!
+                    if (socket) {
+                        socket.emit('fan_control', { fan: 0, speed: 100 }); // LED Bulb 100%
+                        socket.emit('fan_control', { fan: 1, speed: 100 }); // Fan 100%
+                        socket.emit('fan_control', { fan: 2, speed: 100 }); // Halogen 100%
+                    }
+                }
+            }
+
+            if (player.y > canvas.height) {
+                triggerDeath();
+            }
+        }
+
+        for(let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i]; p.x += p.dx; p.y += p.dy;
+            if(p.isWind) p.life -= 0.05; else p.life -= p.isSpark ? 0.05 : 0.02;
+            if(p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!gameActive && currentLevel > maxLevels) return;
+
+        ctx.save();
+        if (cameraShake > 0) {
+            ctx.translate((Math.random() - 0.5) * cameraShake, (Math.random() - 0.5) * cameraShake);
+            cameraShake *= 0.9;
+            if (cameraShake < 0.5) cameraShake = 0;
+        }
+
+        ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0,0, canvas.width, canvas.height);
+        bgBulbs.forEach(b => b.draw(ctx));
+
+        ctx.save();
+        ctx.globalAlpha = 0.1; ctx.fillStyle = '#fff';
+        ctx.translate(canvas.width*0.2, canvas.height*0.3); ctx.rotate(frameCount*0.01);
+        for(let i=0; i<3; i++) { ctx.rotate(Math.PI*2/3); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(150, -40); ctx.lineTo(150, 40); ctx.fill(); }
+        ctx.restore();
+
+        platforms.forEach(p => {
+            let yShake = (p.fake && p.breakTimer > 0 && p.breakTimer < 40) ? (Math.random()-0.5)*6 : 0;
+            let drawY = p.y + yShake;
+            
+            let grad = ctx.createLinearGradient(0, drawY, 0, drawY + p.height);
+            grad.addColorStop(0, '#334'); grad.addColorStop(0.2, '#8a8a9a'); grad.addColorStop(0.5, '#2a2a3a'); grad.addColorStop(1, '#0a0a1a');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.roundRect(p.x, drawY, p.width, p.height, 5); ctx.fill();
+
+            ctx.fillStyle = p.fake ? '#f00' : '#0ff';
+            ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+            ctx.fillRect(p.x + 10, drawY + p.height/2 - 2, p.width - 20, 4);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#111';
+            ctx.fillRect(p.x, drawY - 4, 12, p.height + 8);
+            ctx.fillRect(p.x + p.width - 12, drawY - 4, 12, p.height + 8);
+            ctx.fillStyle = '#666';
+            ctx.beginPath(); ctx.arc(p.x + 6, drawY + 4, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x + 6, drawY + p.height - 4, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x + p.width - 6, drawY + 4, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x + p.width - 6, drawY + p.height - 4, 2, 0, Math.PI*2); ctx.fill();
+        });
+
+        fans.forEach(f => f.draw(ctx));
+
+        ambientSparks.forEach(s => {
+            ctx.globalCompositeOperation = 'lighter';
+            let grad = ctx.createRadialGradient(s.x+s.width/2, s.y+s.height, 0, s.x+s.width/2, s.y+s.height, 20);
+            grad.addColorStop(0, '#fff'); grad.addColorStop(0.3, '#0ff'); grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fillRect(s.x - 20, s.y - 20, 40, s.height + 40);
+            ctx.fillStyle = '#fff'; ctx.fillRect(s.x, s.y, s.width, s.height);
+            ctx.globalCompositeOperation = 'source-over';
+            spawnParticles(s.x + s.width/2, s.y, '#0ff', 1, true); 
+        });
+        
+        teslaGates.forEach(g => {
+            let coreGrad = ctx.createLinearGradient(g.x, 0, g.x + g.width, 0);
+            coreGrad.addColorStop(0, '#111'); coreGrad.addColorStop(0.5, '#444'); coreGrad.addColorStop(1, '#111');
+            ctx.fillStyle = coreGrad;
+            
+            ctx.fillRect(g.x, 0, g.width, g.gapY); 
+            ctx.fillStyle = '#0ff'; ctx.fillRect(g.x - 5, g.gapY - 10, g.width + 10, 10); 
+            
+            ctx.fillStyle = coreGrad; ctx.fillRect(g.x, g.gapY + g.gapHeight, g.width, canvas.height);
+            ctx.fillStyle = '#0ff'; ctx.fillRect(g.x - 5, g.gapY + g.gapHeight, g.width + 10, 10); 
+
+            if(frameCount % 3 === 0) {
+                drawLightning(ctx, g.x + g.width/2, g.gapY, g.x + g.width/2, g.gapY + g.gapHeight, 5, '#0ff');
+                if(Math.random()>0.5) drawLightning(ctx, g.x + g.width/2, g.gapY, g.x + g.width/2, g.gapY + g.gapHeight, 4, '#fff');
+            }
+        });
+
+        if(goalBulb) {
+            let glow = Math.abs(Math.sin(frameCount * 0.05)) * 10 + 10;
+            ctx.fillStyle = '#aa0'; ctx.shadowBlur = glow; ctx.shadowColor = '#ff0';
+            ctx.fillRect(goalBulb.x, goalBulb.y + goalBulb.height - 20, goalBulb.width, 20); 
+            
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.beginPath(); ctx.arc(goalBulb.x + goalBulb.width/2, goalBulb.y + 20, 20, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        if(!isDead) drawPlayer(ctx);
+
+        particles.forEach(p => {
+            ctx.globalCompositeOperation = p.isSpark ? 'lighter' : 'source-over';
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            if(p.isSpark) { ctx.shadowBlur = 10; ctx.shadowColor = p.color; }
+            if(p.isWind) { ctx.fillRect(p.x, p.y, 10, 2); } 
+            else { ctx.beginPath(); ctx.arc(p.x, p.y, p.isSpark ? 2.5 : 2, 0, Math.PI*2); ctx.fill(); }
+            ctx.shadowBlur = 0;
+        });
+        ctx.globalAlpha = 1.0;
+        ctx.globalCompositeOperation = 'source-over';
+
+        ctx.restore(); 
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function startGame() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        currentLang = document.getElementById('lang-select').value;
+        document.getElementById('start-screen').style.display = 'none';
+        
+        // Ensure mains relay is turned ON on game start
+        turnOnMainsRelay();
+
+        showTypewriterText(currentLang === 'ml-IN' ? "Terms accepted. Good luck, idiot." : "Terms and conditions accepted.", null);
+        speakText(currentLang === 'ml-IN' ? "Terms accepted. Good luck, idiot." : "Terms and conditions accepted.", currentLang);
+        
+        loadLevel();
+        gameActive = true;
+        updateControlsVisibility();
+    }
+
+    updateControlsVisibility();
+    loop();
+</script>
+</body>
+</html>
