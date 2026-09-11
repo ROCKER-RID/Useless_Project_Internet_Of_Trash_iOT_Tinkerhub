@@ -1,103 +1,207 @@
+```markdown
 <img width="1280" height="640" alt="git (1)" src="https://github.com/user-attachments/assets/8920b256-2ba8-4988-b824-5351134eb4bd" />
 
-
-
-# [Project Name] 🎯
-
+# Switch Devil 🎯
 
 ## Basic Details
-### Team Name: [Name]
-
+### Team Name: SyncSpace / VoltRogues
 
 ### Team Members
-- Team Lead: [Name] - [College]
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead: Ridhin George - Sahrdaya College of Engineering & Technology
+- Member 2: Aaron A S - Sahrdaya College of Engineering & Technology
 
 ### Project Description
-[2-3 lines about what your project does]
+Switch Devil is a cyber-physical platformer where your household 230V AC appliances are held hostage behind a brutal 2D gauntlet. To operate your room's LED lights, induction ceiling fan, and halogen lamp, you must physically survive platform traps, Tesla lightning barriers, and high-voltage wind corridors while iconic Malayalam cinema icons roast your failures in real-time.
 
 ### The Problem (that doesn't exist)
-[What ridiculous problem are you solving?]
+Flipping a standard wall switch to turn on your lights or fans is dangerously effortless, boring, and encourages lazy human behavior. Why should electricity flow to your appliances just because a finger exerted 0.2 Newtons of mechanical force? There is zero adrenaline, zero character growth, and absolutely no emotional trauma involved in turning on a desk lamp.
 
 ### The Solution (that nobody asked for)
-[How are you solving it? Keep it fun!]
-
-## Technical Details
-### Technologies/Components Used
-For Software:
-- [Languages used]
-- [Frameworks used]
-- [Libraries used]
-- [Tools used]
-
-For Hardware:
-- [List main components]
-- [List specifications]
-- [List tools required]
-
-### Implementation
-For Software:
-# Installation
-[commands]
-
-# Run
-[commands]
-
-### Project Documentation
-For Software:
-
-# Screenshots (Add at least 3)
-![Screenshot1](Add screenshot 1 here with proper name)
-*Add caption explaining what this shows*
-
-![Screenshot2](Add screenshot 2 here with proper name)
-*Add caption explaining what this shows*
-
-![Screenshot3](Add screenshot 3 here with proper name)
-*Add caption explaining what this shows*
-
-# Diagrams
-![Workflow](Add your workflow/architecture diagram here)
-*Add caption explaining your workflow*
-
-For Hardware:
-
-# Schematic & Circuit
-![Circuit](Add your circuit diagram here)
-*Add caption explaining connections*
-
-![Schematic](Add your schematic diagram here)
-*Add caption explaining the schematic*
-
-# Build Photos
-![Components](Add photo of your components here)
-*List out all components shown*
-
-![Build](Add photos of build process here)
-*Explain the build steps*
-
-![Final](Add photo of final product here)
-*Explain the final build*
-
-### Project Demo
-# Video
-[Add your demo video link here]
-*Explain what the video demonstrates*
-
-# Additional Demos
-[Add any extra demo materials/links]
-
-## Team Contributions
-- [Name 1]: [Specific contributions]
-- [Name 2]: [Specific contributions]
-- [Name 3]: [Specific contributions]
+We put a microcontroller, optoisolated AC TRIAC phase-angle controllers, and an SPDT master relay between the human and their electricity bill. Want illumination? Beat Sector 1. Want to keep playing without having your room plunged into darkness? Risk your unlocked utilities in a high-stakes "Risk vs. Reward" game-show prompt before each level. If you fall, high-voltage halogen lamps flicker violently in microsecond sync with screen flashes while legendary Malayalam actors remind you of your complete lack of hand-eye coordination.
 
 ---
-Made with ❤️ at TinkerHub Useless Projects 
 
-![Static Badge](https://img.shields.io/badge/TinkerHub-24?color=%23000000&link=https%3A%2F%2Fwww.tinkerhub.org%2F)
-![Static Badge](https://img.shields.io/badge/UselessProjects--26-26?link=https%3A%2F%2Ftinkerhub.org%2Fevents%2F1M8ORET9A1%2Fuseless-projects-3.0)
+## Technical Details
+
+### Technologies/Components Used
+
+#### For Software:
+- **Languages:** JavaScript (ES6+), C++ (Arduino ESP32 Core), HTML5, CSS3
+- **Backend & Gateways:** Node.js, Express.js, Socket.IO, Eclipse Mosquitto (MQTT)
+- **Frontend / Engine:** HTML5 Canvas 2D Rendering Engine, Web Audio API, Google TTS API fallback
+- **Protocols:** WebSockets (Socket.IO bi-directional bridge), MQTT (TCP 1883 with JSON state telemetry), SoftAP Captive Portal (DNS 53 + HTTP 80)
+- **Tools & Environments:** VS Code, Arduino IDE, Git, Paint.NET
+
+#### For Hardware:
+- **Main Microcontroller:** ESP32 Dev Module (Dual-core Xtensa 32-bit LX6 @ 240 MHz)
+- **High Voltage Actuation:**
+  - 3x BT136 600V 4A Sensitive Gate TRIACs (Heat-sink mounted)
+  - 3x MOC3021 Non-Zero-Cross Random-Phase Optocouplers (Galvanic isolation)
+  - 1x 10A / 250V AC SPDT Electromechanical Relay Module (Master Phase Isolator)
+- **AC Zero-Crossing Detection (ZCD):**
+  - H11AA1 Dual-LED AC Input Optocoupler / ZMPT101B Network (Falling Edge on GPIO 14)
+- **Connected 230V AC Loads:**
+  - 1st TRIAC: Dimmable 230V AC LED Utility Bulb
+  - 2nd TRIAC: 230V AC Induction Motor Fan (Ceiling / Table Fan)
+  - 3rd TRIAC: High-Intensity Halogen Lamp (Ghost flicker & ambient dimming)
+- **Tools Required:** Soldering station, digital multimeter, differential oscilloscope probe, wire strippers, non-conductive enclosure.
+
+---
+
+### Implementation
+
+#### For Software:
+
+# Installation
+```bash
+# 1. Clone the repository
+git clone [https://github.com/your-username/switch-devil.git](https://github.com/your-username/switch-devil.git)
+cd switch-devil
+
+# 2. Install backend gateway dependencies
+npm install express socket.io mqtt
+
+# 3. Ensure Mosquitto MQTT Broker is installed and running
+# On Ubuntu/Debian:
+sudo apt-get install mosquitto mosquitto-clients -y
+sudo systemctl start mosquitto
+
+```
+
+# Run
+
+```bash
+# Start the Node.js Socket.IO ↔ MQTT Gateway Server
+node server.js
+
+```
+
+*The web interface will be live at `http://localhost:3000`.*
+
+#### For Hardware (ESP32 Firmware):
+
+1. Open `firmware/useless_projecr11sep26v2/useless_projecr11sep26v2.ino` in the Arduino IDE.
+2. Select Board: **ESP32 Dev Module**.
+3. Install required library: **PubSubClient** by Nick O'Leary via the Library Manager.
+4. Upload to the ESP32 via USB.
+5. On first boot, connect your phone or laptop to the Wi-Fi AP **`SyncSpace_Setup_Useless`** (Password: `12345678`), navigate to `192.168.4.1`, select your home Wi-Fi, and enter your server's MQTT IP.
+
+---
+
+### Project Documentation
+
+#### For Software:
+
+# Screenshots
 
 
+*Switch Devil title screen showing the Terms & Conditions acceptance gate, Malayalam/English voice selector, and real-time hardware latency calibration slider.*
 
+
+*Sector 4 moving platform gauntlet with active induction fan wind particle streams, Tesla electrical discharge gate, and real-time IoT status indicator.*
+
+
+*Sector Complete dialog prompting the player to either cash out their unlocked physical appliance (LED / Fan / Halogen) or risk it all to enter the next sector.*
+
+# Diagrams
+
+```
+┌────────────────────────────────────────────────────────┐
+│             HTML5 Canvas Client (Browser)              │
+│    - Player Physics & Collision Engine                 │
+│    - In-game 2D Fan Wind Calculations                  │
+│    - Dynamic Flash Latency Calibrator                  │
+└───────────────────────────┬────────────────────────────┘
+                            │ WebSockets (Socket.IO)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│            Node.js Gateway Server (server.js)          │
+│    - Bridges Socket.IO to Local MQTT Broker            │
+│    - Caches Device State & Logs Structured JSON Events │
+└───────────────────────────┬────────────────────────────┘
+                            │ TCP Port 1883
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│             Mosquitto MQTT Broker (localhost)          │
+│    - Topics: syncspace/fan/+/cmd, syncspace/relay/+/cmd│
+└───────────────────────────┬────────────────────────────┘
+                            │ 2.4 GHz Wi-Fi
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                   ESP32 Microcontroller                │
+│    - Zero-Cross Interrupt on GPIO 14 (50Hz Mains)      │
+│    - Microsecond esp_timer Phase-Angle Slicing         │
+│    - 2-Second Kickstart & Safety Watchdog Auto-Off     │
+└─────────┬──────────────────┬──────────────────┬────────┘
+          │ GPIO 27          │ GPIO 4           │ GPIO 16           │ GPIO 17
+          ▼                  ▼                  ▼                   ▼
+    [Master Relay]     [1st TRIAC]        [2nd TRIAC]         [3rd TRIAC]
+    230V AC Mains      LED Utility Bulb   Induction Fan       Halogen Lamp
+    Phase Isolation    (100% On Claim)    (Kickstart+Thrust)  (Ghost Flicker)
+
+```
+
+*End-to-end cyber-physical architecture: Real-time user input and game physics are bridged through Socket.IO and MQTT to the ESP32's microsecond phase-angle timers.*
+
+---
+
+#### For Hardware:
+
+# Schematic & Circuit
+
+```
+230V AC Mains (Live) ──► [Master Relay (GPIO 27)] ──┬──► [MOC3021 + BT136 (GPIO 4)]  ──► LED Bulb (Triac 0)
+                                                    ├──► [MOC3021 + BT136 (GPIO 16)] ──► AC Fan (Triac 1)
+                                                    └──► [MOC3021 + BT136 (GPIO 17)] ──► Halogen (Triac 2)
+
+230V AC Mains (Neutral) ────────────────────────────┴────────────────────────────────► Common Return
+
+AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────► ESP32 GPIO 14 (ZCD Hardware Interrupt)
+
+```
+
+*Complete AC power distribution: Master relay cuts/energizes the phase rail for all three TRIAC channels, while the zero-cross detector provides phase-angle synchronization.*
+
+
+*Schematic illustrating optocoupler isolation boundaries separating the 3.3V low-voltage digital domain from the 230V AC high-voltage switching rail.*
+
+# Build Photos
+
+
+*All key components: ESP32 development board, BT136 TRIACs mounted to aluminum extrusions, MOC3021 opto-triacs, H11AA1 optocoupler, relay module, and snubber networks.*
+
+
+*Assembly process: Mounting heat sinks, wiring optoisolated gate trigger lines, and bench-testing zero-crossing waveforms.*
+
+
+*Final deployment: The real-world test rig with the physical LED bulb, induction desk fan, and halogen floodlight synced to the Switch Devil display.*
+
+---
+
+### Project Demo
+
+# Video
+
+[](https://www.google.com/search?q=https://youtu.be/placeholder-demo-link)
+*Demonstration of full gameplay progression: Real-time halogen ghost flickers on death, kick-start break-away torque on the AC induction fan, dynamic 100% thrust acceleration on Sector 4's 4th platform, and cashing out unlocked utilities via the Risk vs. Reward modals.*
+
+# Additional Demos
+
+* [Interactive Web Client Preview](https://www.google.com/search?q=https://github.com/your-username/switch-devil)
+* Captive portal provisioning demonstration under `firmware/`
+
+---
+
+## Team Contributions
+
+* **Ridhin George:** Designed the cyber-physical architecture, authored the ESP32 phase-angle dimming firmware with microsecond zero-cross timer interrupts, built the Node.js Socket.IO ↔ MQTT gateway, and created the 2D Canvas game physics, hazard logic, and dynamic latency calibrator.
+* **Sharon Maliakal:** Assembled and benchmarked the high-voltage AC Triac power board, integrated snubber circuits for inductive motor loads, and tuned the 2-second fan kickstart break-away torque parameters.
+* **R A Swaroop:** Curated and mastered the Malayalam meme audio soundboard, developed the dialogue HUD and sticker reaction rendering engine, and assisted with electrical isolation safety testing.
+
+---
+
+Made with ❤️ at TinkerHub Useless Projects
+
+```
+
+```
