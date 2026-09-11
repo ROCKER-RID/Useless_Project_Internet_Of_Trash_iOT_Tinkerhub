@@ -4,7 +4,7 @@
 # Switch Devil 🎯
 
 ## Basic Details
-### Team Name: SyncSpace / VoltRogues
+### Team Name: SyncSpace: Internet Of Trash iOT
 
 ### Team Members
 - Team Lead: Ridhin George - Sahrdaya College of Engineering & Technology
