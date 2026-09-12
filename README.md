@@ -182,7 +182,7 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 
 # Video
 
-[](https://www.google.com/search?q=https://youtu.be/placeholder-demo-link)
+[]([https://www.google.com/search?q=https://youtu.be/placeholder-demo-link](https://youtu.be/iDIchzv8JpA?si=oO54uRwdL7lqyoZV))
 *Demonstration of full gameplay progression: Real-time halogen ghost flickers on death, kick-start break-away torque on the AC induction fan, dynamic 100% thrust acceleration on Sector 4's 4th platform, and cashing out unlocked utilities via the Risk vs. Reward modals.*
 
 # Additional Demos
@@ -196,7 +196,7 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 ## Team Contributions
 
 * **Ridhin George:** Architected and built the entire cyber-physical system—engineered the high-voltage AC circuit schematics (`Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf`), authored the ESP32 phase-angle dimming firmware with microsecond zero-cross timer interrupts, developed the Node.js Socket.IO ↔ MQTT gateway server, programmed the core HTML5 Canvas 2D game engine, physics, hazard logic, real-time latency calibration, and the Risk vs. Reward progression system.
-* **Aaron A S:** Optimized the game UI aesthetics, visual styling, CRT filters, fine-tuned the Malayalam meme audio sound effects and timing, and integrated the dialogue reaction stickers.
+* **Aaron A S:** Optimized the game UI aesthetics, visual styling, CRT filters,programmed the core HTML5 Canvas 2D game engine, physics, hazard logic, real-time latency calibration, fine-tuned the Malayalam meme audio sound effects and timing, and integrated the dialogue reaction stickers.
 
 ---
 
