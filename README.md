@@ -55,8 +55,8 @@ We put a microcontroller, optoisolated AC TRIAC phase-angle controllers, and an 
 # Installation
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/your-username/switch-devil.git](https://github.com/your-username/switch-devil.git)
-cd switch-devil
+git clone (https://github.com/ROCKER-RID/Useless_Project_Internet_Of_Trash_iOT_Tinkerhub)
+cd Useless_Project_Internet_Of_Trash_iOT_Tinkerhub
 
 # 2. Install backend gateway dependencies
 npm install express socket.io mqtt
@@ -80,7 +80,7 @@ node server.js
 
 #### For Hardware (ESP32 Firmware):
 
-1. Open `firmware/useless_projecr11sep26v2/useless_projecr11sep26v2.ino` in the Arduino IDE.
+1. Open `firmware/Esp32Code_useless_projecr11sep26/Esp32Code_useless_projecr11sep26.ino` in the Arduino IDE.
 2. Select Board: **ESP32 Dev Module**.
 3. Install required library: **PubSubClient** by Nick O'Leary via the Library Manager.
 4. Upload to the ESP32 via USB.
@@ -93,6 +93,11 @@ node server.js
 #### For Software:
 
 # Screenshots
+
+<img width="1194" height="901" alt="Screenshot 2026-09-12 054034" src="https://github.com/user-attachments/assets/6eb4ac46-0281-4920-b562-ee18b9ca857e" />
+<img width="1465" height="1079" alt="Screenshot 2026-09-12 054021" src="https://github.com/user-attachments/assets/3959c096-3cb9-4dca-8c79-1ce45567e778" />
+<img width="1280" height="720" alt="WhatsApp Image 2026-09-12 at 06 19 00" src="https://github.com/user-attachments/assets/9e609e68-a89f-465b-b051-637faa1e4546" />
+
 
 
 *Switch Devil title screen showing the Terms & Conditions acceptance gate, Malayalam/English voice selector, and real-time hardware latency calibration slider.*
@@ -182,12 +187,12 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 
 # Video
 
-[]https://youtu.be/iDIchzv8JpA?si=oO54uRwdL7lqyoZV)
+*[Video](https://youtu.be/iDIchzv8JpA?si=oO54uRwdL7lqyoZV)
 *Demonstration of full gameplay progression: Real-time halogen ghost flickers on death, kick-start break-away torque on the AC induction fan, dynamic 100% thrust acceleration on Sector 4's 4th platform, and cashing out unlocked utilities via the Risk vs. Reward modals.*
 
 # Additional Demos
 
-* [Interactive Web Client Preview](https://www.google.com/search?q=https://github.com/your-username/switch-devil)
+* [Interactive Web Client Preview](https://syncspaceinternetoftrash.vercel.app?_vercel_share=QWwUAOVxD4KJqC26AM2ycNDbILffXMTT)
 * [Complete Hardware Schematics (PDF)](https://github.com/ROCKER-RID/Useless_Project_Internet_Of_Trash_iOT_Tinkerhub/tree/main/Syncspace_internet_Of_Trash_iot_Useless_Hardware.pdf)
 * Captive portal provisioning demonstration under `firmware/`
 
