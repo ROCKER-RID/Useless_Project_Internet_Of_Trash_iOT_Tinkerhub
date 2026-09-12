@@ -182,7 +182,7 @@ AC Mains Sensing ──► [H11AA1 Optocoupler] ──────────�
 
 # Video
 
-[]([https://www.google.com/search?q=https://youtu.be/placeholder-demo-link](https://youtu.be/iDIchzv8JpA?si=oO54uRwdL7lqyoZV))
+[]https://youtu.be/iDIchzv8JpA?si=oO54uRwdL7lqyoZV)
 *Demonstration of full gameplay progression: Real-time halogen ghost flickers on death, kick-start break-away torque on the AC induction fan, dynamic 100% thrust acceleration on Sector 4's 4th platform, and cashing out unlocked utilities via the Risk vs. Reward modals.*
 
 # Additional Demos
